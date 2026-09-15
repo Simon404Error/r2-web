@@ -13,6 +13,9 @@ class FilePreview {
   #currentKey = ''
   #currentText = ''
   #currentUrl = ''
+  /** @type {HTMLImageElement | null} */
+  #currentImage = null
+  #currentImageLoaded = false
 
   /** @param {R2Client} r2 @param {UIManager} ui */
   constructor(r2, ui) {
@@ -34,6 +37,8 @@ class FilePreview {
     this.#currentKey = key
     this.#currentText = ''
     this.#currentUrl = ''
+    this.#currentImage = null
+    this.#currentImageLoaded = false
     const dialog = /** @type {HTMLDialogElement} */ ($('#preview-dialog'))
     const body = $('#preview-body')
     const footer = $('#preview-footer')
@@ -76,6 +81,21 @@ class FilePreview {
         this.#currentUrl = url
         body.innerHTML = ''
         const img = document.createElement('img')
+        this.#currentImage = img
+        img.addEventListener(
+          'load',
+          () => {
+            if (this.#currentImage === img) this.#currentImageLoaded = true
+          },
+          { once: true },
+        )
+        img.addEventListener(
+          'error',
+          () => {
+            if (this.#currentImage === img) this.#currentImageLoaded = false
+          },
+          { once: true },
+        )
         img.src = url
         img.alt = extractFileName(key)
         body.appendChild(img)
@@ -159,28 +179,63 @@ class FilePreview {
     }
   }
 
+  /** @param {HTMLImageElement} img @returns {Promise<Blob>} */
+  #imageToPng(img) {
+    return new Promise((resolve, reject) => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const context = canvas.getContext('2d')
+      if (!context || !canvas.width || !canvas.height) {
+        reject(new Error('Image is not ready'))
+        return
+      }
+      try {
+        context.drawImage(img, 0, 0)
+        canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('Failed to convert image'))), 'image/png')
+      } catch (err) {
+        reject(err)
+      }
+    })
+  }
+
+  /** @param {string} key @returns {Promise<Blob>} */
+  async #fetchImageAsPng(key) {
+    const url = await this.#r2.getPresignedUrl(key)
+    const res = await fetch(url)
+    if (!res.ok) throw new Error(`Failed to fetch image: ${res.status}`)
+    const blob = await res.blob()
+    const objectUrl = URL.createObjectURL(blob)
+    try {
+      const img = new Image()
+      await new Promise((resolve, reject) => {
+        img.addEventListener('load', resolve, { once: true })
+        img.addEventListener('error', reject, { once: true })
+        img.src = objectUrl
+      })
+      return await this.#imageToPng(img)
+    } finally {
+      URL.revokeObjectURL(objectUrl)
+    }
+  }
+
   async copyCurrentImage() {
-    if (!this.#currentUrl) return
+    if (!this.#currentKey || !this.#currentImage) return
     if (!navigator.clipboard?.write) {
       this.#ui.toast(t('copyImageNotSupported'), 'error')
       return
     }
     try {
-      const res = await fetch(this.#currentUrl)
-      const blob = await res.blob()
-      const pngBlob = await new Promise((resolve, reject) => {
-        const img = new Image()
-        img.onload = () => {
-          const canvas = document.createElement('canvas')
-          canvas.width = img.naturalWidth
-          canvas.height = img.naturalHeight
-          canvas.getContext('2d').drawImage(img, 0, 0)
-          canvas.toBlob((b) => (b ? resolve(b) : reject(new Error())), 'image/png')
-          URL.revokeObjectURL(img.src)
+      let pngBlob
+      if (this.#currentImageLoaded) {
+        try {
+          pngBlob = await this.#imageToPng(this.#currentImage)
+        } catch {
+          pngBlob = await this.#fetchImageAsPng(this.#currentKey)
         }
-        img.onerror = reject
-        img.src = URL.createObjectURL(blob)
-      })
+      } else {
+        pngBlob = await this.#fetchImageAsPng(this.#currentKey)
+      }
       await navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob })])
       this.#ui.toast(t('copyImageSuccess'), 'success')
     } catch {
