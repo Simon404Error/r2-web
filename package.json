@@ -1,7 +1,7 @@
 {
   "name": "r2-web",
   "private": true,
-  "version": "1.13.0",
+  "version": "1.13.1",
   "type": "module",
   "packageManager": "pnpm@10.30.3",
   "author": "Viki <hi@viki.moe> (https://github.com/vikiboss)",
