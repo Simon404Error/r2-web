@@ -1298,7 +1298,16 @@
     line-height: 1.4;
   }
 
+  .upload-item-meta {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    min-width: 0;
+  }
+
   .upload-item-status {
+    flex: 1;
+    min-width: 0;
     font-size: 10px;
     color: var(--text-tertiary);
     line-height: 1.4;
@@ -1306,6 +1315,48 @@
     overflow: hidden;
     text-overflow: ellipsis;
     font-family: var(--font-mono);
+    transition: color var(--duration-fast);
+
+    &.pausing {
+      color: var(--text-warning);
+    }
+
+    &.paused {
+      color: var(--text-secondary);
+    }
+  }
+
+  .upload-action-btn {
+    flex: none;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--accent);
+    font-size: 10px;
+    line-height: 1.4;
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      text-decoration: underline;
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.7;
+    }
+
+    &.pausing {
+      color: var(--text-warning);
+    }
+
+    &.paused {
+      color: var(--text-success);
+      font-weight: 600;
+    }
+
+    &.danger {
+      color: var(--text-danger);
+    }
   }
 
   .upload-progress {
@@ -1320,8 +1371,18 @@
     height: 100%;
     background: var(--accent);
     border-radius: var(--radius-sm);
-    transition: width var(--duration-fast);
+    transition:
+      width var(--duration-fast),
+      background-color var(--duration-fast);
     width: 0%;
+
+    &.pausing {
+      background: var(--text-warning);
+    }
+
+    &.paused {
+      background: var(--text-tertiary);
+    }
 
     &.indeterminate {
       width: 100%;
@@ -1331,12 +1392,16 @@
     }
 
     &.done {
-      background: #4caf50;
+      background: var(--text-success);
       width: 100%;
     }
     &.error {
       background: var(--text-danger);
       width: 100%;
+    }
+
+    &.canceled {
+      background: var(--text-tertiary);
     }
   }
 
@@ -1772,6 +1837,25 @@
       color: var(--text-secondary);
       letter-spacing: -0.01em;
       margin-bottom: var(--sp-3);
+    }
+  }
+
+  .multipart-cleanup-section {
+    padding-top: var(--sp-4);
+    border-top: 1px solid var(--border);
+
+    & strong,
+    & small {
+      display: block;
+    }
+
+    & small {
+      margin-top: var(--sp-1);
+      line-height: 1.5;
+    }
+
+    & .btn {
+      align-self: flex-start;
     }
   }
 

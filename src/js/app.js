@@ -7,6 +7,7 @@ import {
   DENSITY_KEY,
   SORT_BY_KEY,
   SORT_ORDER_KEY,
+  MAX_UPLOAD_SIZE,
 } from './constants.js'
 import { ConfigManager } from './config-manager.js'
 import { FileExplorer } from './file-explorer.js'
@@ -18,6 +19,7 @@ import { UIManager } from './ui-manager.js'
 import { getCurrentLang, setLang, t } from './i18n.js'
 import { $, getErrorMessage } from './utils.js'
 import dayjs from 'dayjs'
+import { filesize } from 'filesize'
 
 /** @typedef {'zh'|'en'|'ja'} Lang */
 
@@ -145,6 +147,9 @@ class App {
     $('#lbl-filename-tpl').textContent = t('filenameTpl')
     $('#lbl-filename-tpl-scope').textContent = t('filenameTplScope')
     $('#lbl-upload-concurrency').textContent = t('uploadConcurrency')
+    $('#multipart-cleanup-title').textContent = t('multipartCleanupTitle')
+    $('#multipart-cleanup-desc').textContent = t('multipartCleanupDesc')
+    $('#cleanup-multipart-btn').textContent = t('multipartCleanupButton')
     const filenameScopeSelect = $('#cfg-filename-tpl-scope')
     if (filenameScopeSelect) {
       $('option[value="images"]', filenameScopeSelect).textContent = t('filenameTplScopeImages')
@@ -219,7 +224,9 @@ class App {
 
     $('#empty-state p').textContent = t('emptyFolder')
     $('#empty-upload-btn').lastChild.textContent = ' ' + t('uploadFiles')
-    $('#empty-upload-hint').textContent = t('uploadHint')
+    $('#empty-upload-hint').textContent = t('uploadHint', {
+      size: filesize(MAX_UPLOAD_SIZE, { standard: 'iec' }),
+    })
     $('#paste-hint-text').textContent = t('pasteHint')
 
     $('#load-more-btn').textContent = t('loadMore')
@@ -501,6 +508,35 @@ class App {
     if (tinifyKeyInput) tinifyKeyInput.value = cfg.tinifyKey || ''
     if (uploadConcurrencyInput) uploadConcurrencyInput.value = String(cfg.uploadConcurrency ?? 3)
 
+    const cleanupMultipartButton = /** @type {HTMLButtonElement} */ ($('#cleanup-multipart-btn'))
+    cleanupMultipartButton.disabled = !this.#config.isValid()
+    cleanupMultipartButton.onclick = async () => {
+      const confirmed = await this.#ui.confirm(t('multipartCleanupConfirmTitle'), t('multipartCleanupConfirmMsg'))
+      if (!confirmed) return
+
+      cleanupMultipartButton.disabled = true
+      cleanupMultipartButton.textContent = t('multipartCleaning')
+      this.#upload?.cancelAllUploads()
+      try {
+        const result = await this.#r2.abortAllMultipartUploads()
+        if (result.failed > 0) {
+          this.#ui.toast(
+            t('multipartCleanupPartial', { success: result.succeeded, fail: result.failed }),
+            'error',
+          )
+        } else if (result.total === 0) {
+          this.#ui.toast(t('multipartCleanupEmpty'), 'info')
+        } else {
+          this.#ui.toast(t('multipartCleanupSuccess', { count: result.succeeded }), 'success')
+        }
+      } catch (error) {
+        this.#ui.toast(t(getErrorMessage(/** @type {Error} */ (error)), { msg: String(error) }), 'error')
+      } finally {
+        cleanupMultipartButton.disabled = false
+        cleanupMultipartButton.textContent = t('multipartCleanupButton')
+      }
+    }
+
     const updateCompressVisibility = () => {
       const mode = compressModeInput ? compressModeInput.value : 'none'
       const localOpts = $('#compress-local-options')
@@ -644,21 +680,31 @@ class App {
       if (checkboxWrap) {
         e.stopPropagation()
         const card = /** @type {HTMLElement | null} */ (checkboxWrap.closest('.file-card'))
-        if (card) /** @type {FileExplorer} */ (this.#explorer).toggleSelect(card.dataset.key ?? '', card.dataset.isFolder === 'true')
+        if (card)
+          /** @type {FileExplorer} */ (this.#explorer).toggleSelect(
+            card.dataset.key ?? '',
+            card.dataset.isFolder === 'true',
+          )
         return
       }
 
       const card = /** @type {HTMLElement | null} */ (target.closest('.file-card'))
       if (card) {
         if (this.#batchMode) {
-          /** @type {FileExplorer} */ (this.#explorer).toggleSelect(card.dataset.key ?? '', card.dataset.isFolder === 'true')
+          /** @type {FileExplorer} */ this.#explorer.toggleSelect(
+            card.dataset.key ?? '',
+            card.dataset.isFolder === 'true',
+          )
           return
         }
         if (e.ctrlKey || e.metaKey) {
-          /** @type {FileExplorer} */ (this.#explorer).toggleSelect(card.dataset.key ?? '', card.dataset.isFolder === 'true')
+          /** @type {FileExplorer} */ this.#explorer.toggleSelect(
+            card.dataset.key ?? '',
+            card.dataset.isFolder === 'true',
+          )
           return
         }
-        /** @type {FileExplorer} */ (this.#explorer).clearSelection()
+        /** @type {FileExplorer} */ this.#explorer.clearSelection()
         if (card.dataset.isFolder === 'true') {
           /** @type {FileExplorer} */ this.#explorer.navigate(card.dataset.key ?? '')
         } else {
@@ -835,9 +881,9 @@ class App {
       const total = document.querySelectorAll('#file-grid .file-card').length
       const selected = /** @type {FileExplorer} */ (this.#explorer).selectionCount
       if (total > 0 && selected === total) {
-        /** @type {FileExplorer} */ (this.#explorer).clearSelection()
+        /** @type {FileExplorer} */ this.#explorer.clearSelection()
       } else {
-        /** @type {FileExplorer} */ (this.#explorer).selectAll()
+        /** @type {FileExplorer} */ this.#explorer.selectAll()
       }
     })
 

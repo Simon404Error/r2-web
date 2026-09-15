@@ -82,14 +82,139 @@ class R2Client {
     return [...doc.querySelectorAll('Contents > Key')].some((el) => el.textContent === key)
   }
 
-  /** @param {string} key @param {string} contentType */
-  async putObjectSigned(key, contentType) {
+  /** @param {string} key @param {string} contentType @param {Blob} body */
+  async putObjectSigned(key, contentType, body) {
     const url = `${/** @type {ConfigManager} */ (this.#config).getBucketUrl()}/${encodeS3Key(key)}`
     const req = await /** @type {AwsClient} */ (this.#client).sign(url, {
       method: 'PUT',
       headers: { 'Content-Type': contentType },
+      body,
     })
     return { url: req.url, headers: Object.fromEntries(req.headers.entries()) }
+  }
+
+  /** @param {string} key @param {string} contentType */
+  async createMultipartUpload(key, contentType) {
+    const url = new URL(`${/** @type {ConfigManager} */ (this.#config).getBucketUrl()}/${encodeS3Key(key)}`)
+    url.searchParams.set('uploads', '')
+    const res = await /** @type {AwsClient} */ (this.#client).fetch(url.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': contentType },
+    })
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+    const doc = new DOMParser().parseFromString(await res.text(), 'application/xml')
+    const uploadId = doc.querySelector('UploadId')?.textContent
+    if (!uploadId) throw new Error('R2 did not return a multipart upload ID')
+    return uploadId
+  }
+
+  /** @param {string} key @param {string} uploadId @param {number} partNumber @param {Blob} body */
+  async uploadPartSigned(key, uploadId, partNumber, body) {
+    const url = new URL(`${/** @type {ConfigManager} */ (this.#config).getBucketUrl()}/${encodeS3Key(key)}`)
+    url.searchParams.set('partNumber', String(partNumber))
+    url.searchParams.set('uploadId', uploadId)
+    const req = await /** @type {AwsClient} */ (this.#client).sign(url.toString(), {
+      method: 'PUT',
+      body,
+    })
+    return { url: req.url, headers: Object.fromEntries(req.headers.entries()) }
+  }
+
+  /** @param {string} key @param {string} uploadId @param {{ partNumber: number; etag: string }[]} parts */
+  async completeMultipartUpload(key, uploadId, parts) {
+    const url = new URL(`${/** @type {ConfigManager} */ (this.#config).getBucketUrl()}/${encodeS3Key(key)}`)
+    url.searchParams.set('uploadId', uploadId)
+    const body = `<CompleteMultipartUpload>${parts
+      .map(({ partNumber, etag }) => `<Part><PartNumber>${partNumber}</PartNumber><ETag>${etag}</ETag></Part>`)
+      .join('')}</CompleteMultipartUpload>`
+    const res = await /** @type {AwsClient} */ (this.#client).fetch(url.toString(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/xml' },
+      body,
+    })
+    const text = await res.text()
+    if (!res.ok || new DOMParser().parseFromString(text, 'application/xml').querySelector('Error')) {
+      throw new Error(`HTTP ${res.status}`)
+    }
+  }
+
+  /** @param {string} key @param {string} uploadId */
+  async abortMultipartUpload(key, uploadId) {
+    const url = new URL(`${/** @type {ConfigManager} */ (this.#config).getBucketUrl()}/${encodeS3Key(key)}`)
+    url.searchParams.set('uploadId', uploadId)
+    const res = await /** @type {AwsClient} */ (this.#client).fetch(url.toString(), { method: 'DELETE' })
+    if (!res.ok && res.status !== 404) throw new Error(`HTTP ${res.status}`)
+  }
+
+  /**
+   * @param {string} [keyMarker]
+   * @param {string} [uploadIdMarker]
+   */
+  async listMultipartUploads(keyMarker = '', uploadIdMarker = '') {
+    const url = new URL(/** @type {ConfigManager} */ (this.#config).getBucketUrl())
+    url.searchParams.set('uploads', '')
+    url.searchParams.set('max-uploads', '1000')
+    if (keyMarker) url.searchParams.set('key-marker', keyMarker)
+    if (uploadIdMarker) url.searchParams.set('upload-id-marker', uploadIdMarker)
+
+    const res = await /** @type {AwsClient} */ (this.#client).fetch(url.toString())
+    if (!res.ok) throw new Error(`HTTP ${res.status}`)
+
+    const doc = new DOMParser().parseFromString(await res.text(), 'application/xml')
+    const uploads = [...doc.querySelectorAll('Upload')]
+      .map((item) => ({
+        key: item.querySelector('Key')?.textContent ?? '',
+        uploadId: item.querySelector('UploadId')?.textContent ?? '',
+      }))
+      .filter((item) => item.key && item.uploadId)
+
+    return {
+      uploads,
+      isTruncated: doc.querySelector('IsTruncated')?.textContent === 'true',
+      nextKeyMarker: doc.querySelector('NextKeyMarker')?.textContent ?? '',
+      nextUploadIdMarker: doc.querySelector('NextUploadIdMarker')?.textContent ?? '',
+    }
+  }
+
+  async abortAllMultipartUploads() {
+    /** @type {{ key: string; uploadId: string }[]} */
+    const uploads = []
+    let keyMarker = ''
+    let uploadIdMarker = ''
+
+    while (true) {
+      const page = await this.listMultipartUploads(keyMarker, uploadIdMarker)
+      uploads.push(...page.uploads)
+      if (!page.isTruncated) break
+      if (page.nextKeyMarker === keyMarker && page.nextUploadIdMarker === uploadIdMarker) {
+        throw new Error('R2 returned invalid multipart upload pagination markers')
+      }
+      keyMarker = page.nextKeyMarker
+      uploadIdMarker = page.nextUploadIdMarker
+    }
+
+    let nextIndex = 0
+    let succeeded = 0
+    let failed = 0
+    const worker = async () => {
+      while (nextIndex < uploads.length) {
+        const upload = uploads[nextIndex++]
+        let cleaned = false
+        for (let attempt = 0; attempt < 3 && !cleaned; attempt++) {
+          try {
+            await this.abortMultipartUpload(upload.key, upload.uploadId)
+            cleaned = true
+          } catch {
+            if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 500 * 2 ** attempt))
+          }
+        }
+        if (cleaned) succeeded++
+        else failed++
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(5, uploads.length) }, worker))
+    return { total: uploads.length, succeeded, failed }
   }
 
   /** @param {string} key */

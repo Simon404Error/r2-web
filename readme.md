@@ -8,68 +8,39 @@
 
 <a href="https://hellogithub.com/repository/vikiboss/r2-web" target="_blank"><img src="https://api.hellogithub.com/v1/widgets/recommend.svg?rid=bd21b5fa51c94603a53054b5a3becc27&claim_uid=wXMelR56paDoO2x&theme=dark" alt="Featured｜HelloGitHub" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
-> 本项目有幸被 [《科技爱好者周刊（第 387 期）》][ruanyifeng-weekly] 和 [《HelloGitHub（第 123 期）》][hellogithub-123] 推荐，在此表示感谢！同时也欢迎大家试用并提出宝贵意见，一起把这个工具做得更好用、更顺手！
+> 本项目曾被 [《科技爱好者周刊（第 387 期）》][ruanyifeng-weekly] 和 [《HelloGitHub（第 123 期）》][hellogithub-123] 推荐。
 
 ## 在线使用
 
-跟随 [下方指引](#1-配置-r2-桶-cors) 开启 CORS，然后访问 **[r2.viki.moe](https://r2.viki.moe)** 立即开始管理 R2 桶。
+按 [快速开始](#快速开始) 配置 R2 CORS，然后访问 **[r2.viki.moe](https://r2.viki.moe)**。凭证只保存在浏览器本地。
 
-## 私有部署
+## 为什么做 R2 Web？
 
-这里提供几个常见的静态托管平台部署选项，点击按钮即可一键部署：
+Cloudflare 控制台适合基础操作，但大量文件的浏览、移动、重命名和临时上传并不高效；桌面客户端需要安装，CLI 又不适合所有人。R2 Web 希望补上一个随开随用、跨平台且专注 R2 的管理界面。
 
-| 平台             | 快速部署                                                                                   |
-| ---------------- | ------------------------------------------------------------------------------------------ |
-| Vercel           | [![Deploy with Vercel](https://vercel.com/button)][vercel-deploy]                          |
-| Netlify          | [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)][netlify-deploy]      |
-| Cloudflare Pages | [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)][cloudflare-deploy] |
+### 差异化优势
 
-> 如果用得不错，别忘了点个免费的小星星 ✨，对这个项目很重要，非常感谢～
+| 优势 | 说明 |
+| --- | --- |
+| **纯客户端直连** | 浏览器直接调用 R2 S3 API，没有中转服务器，文件和凭证不经过第三方后端 |
+| **零构建、零框架** | `src` 即部署产物，基于原生 Web API，便于审计、修改和私有部署 |
+| **大文件体验** | 自动分片，支持暂停/继续、实时速度和大小进度，最大支持 1 TiB |
+| **专注文件管理** | 目录浏览、预览、排序、批量选择，以及复制、移动、重命名、递归删除 |
+| **图床友好** | 拖拽/粘贴上传、文件名模板、本地图片压缩、Markdown/HTML 链接复制 |
+| **跨平台体验** | PWA、深色模式和 zh / zh_TW / en / ja 多语言支持 |
 
-其他服务只需部署 `src` 目录即可，部署后记得更新 CORS 规则允许你的域名访问 R2 API。
+> R2 Web 不替代复杂权限管理、自动化脚本或 API 集成；这些场景建议使用 Cloudflare 控制台、官方 SDK、CLI 或 rclone。
 
-## 反馈途径
+## 功能速览
 
-- [GitHub Issues](https://github.com/vikiboss/r2-web/issues) - 提交 bug 报告、功能建议
-- [反馈 QQ 群](https://qm.qq.com/q/e47kAlbdsc) - 即时交流、使用反馈（群号：1091212613）
-
-## 为什么是 R2 Web？
-
-**传统方案痛点：**
-
-- 官方控制台功能基础，登录、管理麻烦，无法高效管理大量文件（复制、移动、重命名等）
-- 第三方客户端要下载安装，跨平台麻烦
-- 命令行工具上手门槛高，不适合临时操作
-- 其他 Web 项目不专注 R2，功能不完善，体验欠佳
-
-**R2 Web 解决的问题：**
-
-- 打开浏览器就能用，跨平台零成本
-- 拖拽、粘贴上传 + 图片压缩，省流量省时间
-- PWA 支持，装到桌面像原生应用
-- 纯前端实现，数据不经过第三方服务器
-
-**R2 Web 无法替代的场景：**
-
-- 超大文件上传（>300MB），建议使用 rclone 等工具
-- 复杂权限管理，建议使用官方控制台或 API
-- 自动化脚本，建议使用官方 SDK 或 CLI
-- API 集成，无后端服务，建议使用官方 SDK 或直接调用 R2 API
-
-## 使用场景
-
-- **文件管理**: 目录浏览、重命名、移动、删除，轻松管理大量文件。
-- **文件浏览**: 内置图片/视频/音频/文本预览，快速查看内容无需下载。
-- **私有图床**: 拖拽/粘贴上传，自动压缩，复制为 Markdown/HTML 格式。
-
-## 设计理念
-
-- 零构建，源码即产物，无需编译打包
-- 零框架，原生 Web 技术优先，不依赖框架
-- 零后端，所有逻辑在浏览器中完成，直连 R2 API
-- 极简美学，黑白灰 + R2 橙色，小圆角、扁平化
-- 性能至上，懒加载、防抖节流、请求缓存
-- 细节优先，流畅动画、及时反馈、键盘导航
+| 类别 | 能力 |
+| --- | --- |
+| **浏览与管理** | 分页目录、懒加载缩略图、名称/日期/大小排序、批量复制/移动/删除 |
+| **分片上传** | 选择、拖拽、粘贴；并发上传；自动分片；暂停/继续；冲突处理 |
+| **文件名模板** | `[name]`、`[ext]`、`[hash:N]`、日期、时间戳、UUID 和目录模板 |
+| **图片压缩** | JPEG、PNG、WebP、AVIF 本地 WebAssembly 压缩，也可选 Tinify |
+| **预览与分享** | 图片、视频、音频、文本预览；直链、二维码、Markdown、HTML 格式 |
+| **个性化** | 网格/列表、显示密度、浅色/深色主题、多语言、PWA |
 
 ## 界面截图
 
@@ -77,22 +48,11 @@
 
 ![ea7dd6.png](https://image.viki.moe/github/ea7dd6.png)
 
-## 功能速览
-
-| 功能类别     | 具体功能                                                                                                               |
-| ------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| **文件管理** | 目录浏览、分页加载、懒加载缩略图；按名称/日期/大小排序；重命名、移动、复制、删除（支持递归）；多选批量删除、复制、移动 |
-| **文件上传** | 拖拽/粘贴/选择器上传；文件名模板（哈希、日期、UUID 等占位符）；上传前自动压缩图片（WebAssembly）                       |
-| **文件预览** | 图片预览（常见格式）；视频/音频内嵌播放器；文本文件预览（代码高亮）                                                    |
-| **链接复制** | URL 直链、Markdown、HTML、预签名 URL                                                                                   |
-| **个性化**   | 简体/繁体/英语/日语；深色模式（跟随系统）；配置分享链接/二维码                                                         |
-| **PWA**      | 安装到桌面，原生体验                                                                                                   |
-
 ## 快速开始
 
 ### 1. 配置 R2 桶 CORS
 
-在 Cloudflare 控制台配置 CORS 规则（路径：R2 → 存储桶 → 设置 → CORS 策略）：
+在 Cloudflare 控制台进入 **R2 → 存储桶 → 设置 → CORS 策略**：
 
 ```json
 [
@@ -106,114 +66,78 @@
 ]
 ```
 
-> [!TIP]
-> 私有部署？ 把 `AllowedOrigins` 改成你的域名即可。
+私有部署时，将 `AllowedOrigins` 替换为自己的域名。`ETag` 是完成分片上传所必需的响应头。
 
-### 2. 填写凭证连接
+### 2. 创建并填写凭证
 
-访问 [r2.viki.moe](https://r2.viki.moe)，填写 R2 凭证进行连接。凭证只存储在浏览器 localStorage，不会上传。
+创建权限限定到目标 bucket 的 R2 API Token，在 [r2.viki.moe](https://r2.viki.moe) 填写 Account ID、Access Key ID、Secret Access Key 和 Bucket Name。
 
-### 3. 开始使用
+### 3. 开始管理
 
-开始管理文件、目录，拖拽文件、直接 Ctrl + V 即可上传，右键文件可进行重命名、复制链接等操作。
+拖拽、粘贴或点击上传；右键文件可预览、复制链接、移动、重命名或删除。作为图床使用时，建议启用文件名模板和图片压缩。
 
-如果当作图床使用，建议设置文件名模板，生成带哈希的唯一文件名、开启图片压缩，提升性能和安全性。
+## 私有部署
 
-## 实用技巧
+R2 Web 是静态站点，部署仓库中的 `src` 目录即可。
 
-### 文件名模板示例
+| 平台 | 一键部署 |
+| --- | --- |
+| Vercel | [![Deploy with Vercel](https://vercel.com/button)][vercel-deploy] |
+| Netlify | [![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)][netlify-deploy] |
+| Cloudflare Pages | [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)][cloudflare-deploy] |
 
-- `[name]_[hash:6].[ext]` - 原文件名 + 6 位哈希（默认）
-- `images/[date:YYYY/MM/DD]/[uuid].[ext]` - 按日期分目录
-- `backup/[timestamp]-[name].[ext]` - 时间戳前缀备份
+部署完成后，请将新域名加入 R2 CORS 的 `AllowedOrigins`。
 
-### 配置分享链接
+## 常用配置
 
-生成「配置分享链接」或「配置分享二维码」，快速在多设备同步配置。
+### 文件名模板
+
+- `[name]_[hash:6].[ext]` — 原文件名 + 内容哈希
+- `images/[date:YYYY/MM/DD]/[uuid].[ext]` — 按日期组织目录
+- `backup/[timestamp]-[name].[ext]` — 时间戳备份文件名
+
+### 配置分享
+
+可以生成配置分享链接或二维码，在设备间快速同步设置。
 
 > [!CAUTION]
-> 链接包含 R2 访问凭证，请不要直接分享到公共平台。
-
-### 缓存优化
-
-项目内置支持请求缓存，对目录内容等常见频繁请求返回数据进行了缓存。
-
-对于 CDN 缓存，建议在 Cloudflare 控制台配置缓存规则提升加载速度。
-
-![fca0bf44.png](https://image.viki.moe/github/fca0bf44.png)
-
-## 技术实现
-
-纯前端应用，无构建步骤，代码写完即可部署。
-
-**核心技术：** HTML5/CSS3/ES6+，CSS Layers、原生 `<dialog>`、原生 Fetch、Import Maps、WebAssembly
-
-**依赖库：**
-
-- `aws4fetch` - AWS4 请求签名，处理 R2 S3 API
-- `dayjs` - 日期格式化
-- `@jsquash/*` - WebAssembly 图片压缩（MozJPEG、OxiPNG、libwebp、libavif）
-- `qrcode` - 二维码生成
-
-**无需：** Node.js、Webpack、Vite、React、Vue 等构建工具和框架，保持项目轻盈和零依赖。
+> 分享内容包含 R2 访问凭证。仅通过可信渠道传递，不要发布到公开平台。
 
 ## 本地开发
 
 ```bash
 git clone https://github.com/vikiboss/r2-web.git
 cd r2-web
-
-# 安装依赖（仅用于类型提示）
 pnpm install
 
-# 启动本地服务器
 npx serve src
 # 或
 python3 -m http.server 5500 --directory src
 ```
 
-详细开发指南见 [CLAUDE.md](./CLAUDE.md)。
+项目不需要构建；依赖主要用于浏览器 Import Maps 和本地类型检查。开发约定见 [AGENTS.md](./AGENTS.md)。
 
 ## FAQ
 
-**Q: 凭证安全吗？**
+**凭证安全吗？**  凭证仅存储在浏览器 `localStorage`，请求直接发送到 R2。仍建议使用限定 bucket 和最小权限的 API Token。
 
-A: 凭证只存储在浏览器 localStorage，不会上传到任何服务器。建议使用指定 bucket、非管理员读写权限的 API 令牌。
+**支持哪些浏览器？**  支持最新版 Chrome、Edge、Firefox 和 Safari，不支持 IE。
 
-**Q: 支持哪些浏览器？**
+**图片压缩在哪里进行？**  本地模式使用 WebAssembly 在浏览器内完成；选择 Tinify 时，图片会发送到 Tinify 服务。
 
-A: 现代浏览器（Chrome/Edge/Firefox/Safari 最新版），不考虑 IE 兼容。
+**为什么上传失败？**  检查凭证、bucket 权限和 CORS。分片上传要求允许 `POST` / `PUT` / `DELETE` 并暴露 `ETag`；单文件不能超过 1 TiB。
 
-**Q: 图片压缩在哪里进行？**
+## 反馈
 
-A: 本地压缩使用 WebAssembly，完全在浏览器中完成，文件不会上传到第三方服务器。如果使用云压缩（Tinify 服务），则会将图片上传到 Tinify 服务器进行压缩。
-
-**Q: 可以私有部署吗？**
-
-A: 可以，fork 仓库后修改 CORS 配置中的 `AllowedOrigins`，部署到任意静态托管服务（Cloudflare Pages、Vercel、Netlify 等）。
-
-**Q: 配置分享链接包含什么信息？**
-
-A: 包含访问密钥 ID、秘密访问密钥、存储桶名称等敏感信息，请勿公开分享。
-
-**Q: 为什么上传失败？**
-
-A: 检查 CORS 配置是否正确、凭证是否有效、文件是否超过 300MB（大文件建议用 rclone）。
-
-## 后续计划
-
-- 持续优化 UI/UX，增加更多快捷操作
-
-## 开发故事
-
-项目使用 Claude 4.6 Opus 模型 Vibe Coding 完成，需求到实现纯手工提示词驱动。初始架构和开发设计的提示词可以参考 [plan.md](./plan.md)。
+- [GitHub Issues](https://github.com/vikiboss/r2-web/issues) — Bug 与功能建议
+- [反馈 QQ 群](https://qm.qq.com/q/e47kAlbdsc) — 群号：1091212613
 
 ## License
 
 MIT License
 
 [ruanyifeng-weekly]: https://www.ruanyifeng.com/blog/2026/03/weekly-issue-387.html
+[hellogithub-123]: https://hellogithub.com/periodical/volume/123
 [vercel-deploy]: https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fvikiboss%2Fr2-web&project-name=r2-web&repository-name=r2-web
 [netlify-deploy]: https://app.netlify.com/start/deploy?repository=https%3A%2F%2Fgithub.com%2Fvikiboss%2Fr2-web&integrationName=r2-web&integrationSlug=r2-web
 [cloudflare-deploy]: https://deploy.workers.cloudflare.com/?url=https%3A%2F%2Fgithub.com%2Fvikiboss%2Fr2-web
-[hellogithub-123]: https://hellogithub.com/periodical/volume/123

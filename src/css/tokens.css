@@ -61,6 +61,8 @@
     --text-primary: light-dark(#1a1a1a, #e8e8e8);
     --text-secondary: light-dark(#666666, #999999);
     --text-tertiary: light-dark(#999999, #666666);
+    --text-success: light-dark(#2e7d32, #66bb6a);
+    --text-warning: light-dark(#b26a00, #ffb74d);
     --text-danger: light-dark(#d32f2f, #ef5350);
     --backdrop: light-dark(color-mix(in oklch, black 30%, transparent), color-mix(in oklch, black 50%, transparent));
   }

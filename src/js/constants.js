@@ -9,7 +9,12 @@ export const SORT_BY_KEY = 'r2-manager-sort-by'
 export const SORT_ORDER_KEY = 'r2-manager-sort-order'
 export const PAGE_SIZE = 300
 export const TOAST_DURATION = 3000
-export const MAX_UPLOAD_SIZE = 300 * 1024 * 1024 // 300 MB
+export const MAX_UPLOAD_SIZE = 1024 ** 4 // 1 TiB
+export const MULTIPART_UPLOAD_THRESHOLD = 10 * 1024 ** 2 // 10 MiB
+export const MULTIPART_MIN_PART_SIZE = 5 * 1024 ** 2 // R2 minimum: 5 MiB
+export const MULTIPART_MAX_PARTS = 10_000
+export const MULTIPART_CONCURRENCY = 3
+export const MULTIPART_MAX_RETRIES = 3
 
 export const IMAGE_RE = /\.(jpg|jpeg|png|gif|webp|svg|ico|bmp|avif)$/i
 export const COMPRESSIBLE_IMAGE_RE = /\.(jpe?g|png|webp|avif)$/i

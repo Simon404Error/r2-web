@@ -207,7 +207,8 @@ async function applyFilenameTemplate(template, file) {
   const originalName = file.name
   const ext = getExtension(originalName)
   const base = getBaseName(originalName)
-  const fileHash = await computeFileHash(file)
+  const needsHash = /\[hash(?::\d+)?\]/.test(template)
+  const fileHash = needsHash ? await computeFileHash(file) : ''
 
   let result = template
   result = result.replace(/\[name\]/g, base)

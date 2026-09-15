@@ -1,6 +1,6 @@
-# CLAUDE.md
+# AGENTS.md
 
-本文档为 Claude Code (claude.ai/code) 提供仓库开发指南。
+本文档为本仓库提供开发指南。
 
 ## 项目速览
 

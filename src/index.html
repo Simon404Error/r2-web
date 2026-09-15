@@ -256,6 +256,15 @@
                   </select>
                 </div>
               </div>
+              <div class="config-section multipart-cleanup-section">
+                <div>
+                  <strong id="multipart-cleanup-title">未完成的分片上传</strong>
+                  <small class="text-secondary" id="multipart-cleanup-desc">
+                    清理 R2 中所有正在进行的多部分上传及其已上传分片。
+                  </small>
+                </div>
+                <button type="button" class="btn danger" id="cleanup-multipart-btn">清理全部</button>
+              </div>
             </form>
 
             <!-- Tab 4: Compression -->
